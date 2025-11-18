@@ -4,11 +4,11 @@ namespace Vehicles;
 
 public class VehicleDatabase
 {
-   private List<List<Vehicle>> vehicles;
+   private Dictionary<string, List<Vehicle>> vehiclesById;
 
    public VehicleDatabase()
    {
-      vehicles = new List<List<Vehicle>>();
+      vehiclesById = new Dictionary<string, List<Vehicle>>();
       string csvPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "ev.csv");
       Load(csvPath);
    }
@@ -21,7 +21,7 @@ public class VehicleDatabase
    /// <param name="csvPath"></param>
    private void Load(string csvPath)
    {
-      var lines = File.ReadAllLines(csvPath);
+      var lines = File.ReadLines(csvPath);
       foreach (string row in lines.Skip(1))
       {
          var columns = row.Split(',');
@@ -34,28 +34,29 @@ public class VehicleDatabase
          string model = columns[7];
          string evType = columns[8];
          int evRange = int.Parse(columns[10]);
-         var entry = new Vehicle { Id = id, State = state, City = city, County = county, Make = make, Model = model, ModelYear = modelYear, EvType = evType, EvRange = evRange };
+         bool cafvEligible = columns[9] == "Clean Alternative Fuel Vehicle Eligible";
 
-         bool added = false;
-         foreach(var list in vehicles)
+         var entry = new Vehicle { Id = id, State = state, City = city, County = county, Make = make, Model = model, ModelYear = modelYear, EvType = evType, EvRange = evRange, IsCafvEligible = cafvEligible };
+
+         if (vehiclesById.TryGetValue(id, out var list))
          {
-            if (list[0].Id == id)
-            {
-               list.Add(entry);
-               added = true;
-               break;
-            }
-         }
-         if (!added)
-         {
-            List<Vehicle> list = new List<Vehicle>();
             list.Add(entry);
-            vehicles.Add(list);
+         }
+         else
+         {
+            vehiclesById[id] = new List<Vehicle> { entry };
          }
       }
    }
 
-   public List<List<Vehicle>> GetRegistrations() => vehicles;
+   public List<List<Vehicle>> GetRegistrations() => vehiclesById.Values.ToList();
 
-   public IEnumerable<Vehicle> GetVehicles() => vehicles.Select(x => x[0]);
+   public IEnumerable<Vehicle> GetVehicles() => vehiclesById.Values.Select(x => x[0]);
+
+   public int GetRegistrationCount(string id)
+   {
+      if (vehiclesById.TryGetValue(id, out var list))
+         return list.Count;
+      return 0;
+   }
 }

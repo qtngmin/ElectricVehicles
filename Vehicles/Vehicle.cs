@@ -18,6 +18,7 @@ public class Vehicle
    public string Make { get; set; }
    public string Model { get; set; }
    public string MakeAndModel => $"{Make} {Model}";
+   public bool IsCafvEligible { get; set; }
    public int ModelYear { get; set; }
    public string City { get; set; }
    public string County { get; set; }
